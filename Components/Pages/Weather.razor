@@ -1,11 +1,12 @@
 ﻿@page "/weather"
-@attribute [StreamRendering]
+@using Microsoft.EntityFrameworkCore
+@inject IServiceProvider ServiceProvider
 
 <PageTitle>Weather</PageTitle>
 
 <h1>Weather</h1>
 
-<p>This component demonstrates showing data.</p>
+<p>This component demonstrates showing data from a database.</p>
 
 @if (forecasts == null)
 {
@@ -16,9 +17,9 @@ else
     <table class="table">
         <thead>
             <tr>
-                <th>Date</th>
+                <th>System Name</th>
                 <th aria-label="Temperature in Celsius">Temp. (C)</th>
-                <th aria-label="Temperature in Farenheit">Temp. (F)</th>
+                <th aria-label="Temperature in Fahrenheit">Temp. (F)</th>
                 <th>Summary</th>
             </tr>
         </thead>
@@ -26,7 +27,7 @@ else
             @foreach (var forecast in forecasts)
             {
                 <tr>
-                    <td>@forecast.Date.ToShortDateString()</td>
+                    <td>@forecast.SystemName</td>
                     <td>@forecast.TemperatureC</td>
                     <td>@forecast.TemperatureF</td>
                     <td>@forecast.Summary</td>
@@ -37,28 +38,36 @@ else
 }
 
 @code {
-    private WeatherForecast[]? forecasts;
+    private List<WeatherForecast>? forecasts;
 
     protected override async Task OnInitializedAsync()
     {
-        // Simulate asynchronous loading to demonstrate streaming rendering
-        await Task.Delay(500);
+        // Configuration de la base de données
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseSqlServer("Server=tcp:techitrgserver.database.windows.net,1433;Initial Catalog=TechITdb;Persist Security Info=False;User ID=zacharie;Password=!AristZacki54321;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;")
+            .Options;
 
-        var startDate = DateOnly.FromDateTime(DateTime.Now);
-        var summaries = new[] { "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching" };
-        forecasts = Enumerable.Range(1, 5).Select(index => new WeatherForecast
-        {
-            Date = startDate.AddDays(index),
-            TemperatureC = Random.Shared.Next(-20, 55),
-            Summary = summaries[Random.Shared.Next(summaries.Length)]
-        }).ToArray();
+        using var dbContext = new AppDbContext(options);
+
+        // Charger les données depuis la base de données
+        forecasts = await dbContext.Weather.ToListAsync();
     }
 
-    private class WeatherForecast
+    // Classe pour le DbContext
+    public class AppDbContext : DbContext
     {
-        public DateOnly Date { get; set; }
+        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+
+        public DbSet<WeatherForecast> Weather { get; set; }
+    }
+
+    // Classe pour le modèle WeatherForecast
+    public class WeatherForecast
+    {
+        public int Id { get; set; }
+        public string SystemName { get; set; }
         public int TemperatureC { get; set; }
-        public string? Summary { get; set; }
+        public string Summary { get; set; }
         public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
     }
 }
