@@ -12,6 +12,10 @@
 {
     <p><em>Loading...</em></p>
 }
+else if (!forecasts.Any())
+{
+    <p><em>No weather data available.</em></p>
+}
 else
 {
     <table class="table">
@@ -28,8 +32,8 @@ else
             {
                 <tr>
                     <td>@forecast.SystemName</td>
-                    <td>@forecast.TemperatureC</td>
-                    <td>@forecast.TemperatureF</td>
+                    <td>@forecast.Temp_C</td>
+                    <td>@forecast.Temp_F</td>
                     <td>@forecast.Summary</td>
                 </tr>
             }
@@ -38,19 +42,39 @@ else
 }
 
 @code {
-    private List<WeatherForecast>? forecasts;
+    private List<Weather>? forecasts;
 
     protected override async Task OnInitializedAsync()
     {
-        // Configuration de la base de données
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseSqlServer("Server=tcp:techitrgserver.database.windows.net,1433;Initial Catalog=TechITdb;Persist Security Info=False;User ID=zacharie;Password=!AristZacki54321;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;")
-            .Options;
+        try
+        {
+            // Configuration de la base de données
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlServer("Server=tcp:techitrgserver.database.windows.net,1433;Initial Catalog=TechITdb;Persist Security Info=False;User ID=zacharie;Password=!AristZacki54321;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;")
+                .Options;
 
-        using var dbContext = new AppDbContext(options);
+            using var dbContext = new AppDbContext(options);
 
-        // Charger les données depuis la base de données
-        forecasts = await dbContext.Weather.ToListAsync();
+            // Charger les données depuis la table Weather
+            forecasts = await dbContext.Weather.ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred: {ex.Message}");
+            Console.WriteLine(ex.StackTrace);
+
+            // Optionnel : afficher une erreur dans l'interface utilisateur
+            forecasts = new List<Weather>
+            {
+                new Weather
+                {
+                    SystemName = "Error",
+                    Temp_C = 0,
+                    Temp_F = 0,
+                    Summary = ex.Message
+                }
+            };
+        }
     }
 
     // Classe pour le DbContext
@@ -58,15 +82,15 @@ else
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-        public DbSet<WeatherForecast> Weather { get; set; }
+        public DbSet<Weather> Weather { get; set; }
     }
 
-    // Classe pour le modèle WeatherForecast
-    public class WeatherForecast
+    // Classe pour le modèle Weather
+    public class Weather
     {
         public string SystemName { get; set; }
-        public int TemperatureC { get; set; }
-        public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-         public string Summary { get; set; }
+        public int Temp_C { get; set; }
+        public int Temp_F { get; set; }
+        public string Summary { get; set; }
     }
 }
