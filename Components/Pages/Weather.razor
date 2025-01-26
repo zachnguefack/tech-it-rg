@@ -42,7 +42,7 @@ else
 }
 
 @code {
-    private List<Weather>? forecasts;
+    private List<WeatherData>? forecasts;
 
     protected override async Task OnInitializedAsync()
     {
@@ -64,9 +64,9 @@ else
             Console.WriteLine(ex.StackTrace);
 
             // Optionnel : afficher une erreur dans l'interface utilisateur
-            forecasts = new List<Weather>
+            forecasts = new List<WeatherData>
             {
-                new Weather
+                new WeatherData
                 {
                     SystemName = "Error",
                     Temp_C = 0,
@@ -82,11 +82,11 @@ else
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-        public DbSet<Weather> Weather { get; set; }
+        public DbSet<WeatherData> Weather { get; set; }
     }
 
-    // Classe pour le modèle Weather
-    public class Weather
+    // Classe pour le modèle WeatherData
+    public class WeatherData
     {
         public string SystemName { get; set; }
         public int Temp_C { get; set; }
